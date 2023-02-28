@@ -1,0 +1,101 @@
+version: '3'
+
+services:
+  application:
+    image: node:alpine
+    working_dir: /opt/example-application
+    command: sh -c "yarn && yarn start"
+    environment:
+      - LOKI_HOST=http://loki:3100
+      - PORT=8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ${PWD}/..:/opt/example-application
+      - application.node_modules:/opt/example-application/node_modules
+    networks:
+      - monitoring
+
+  loki:
+    image: grafana/loki:2.7.4
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - monitoring
+
+  promtail:
+    image: grafana/promtail:2.7.4
+    volumes:
+      - promtail.data:/var/log
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - monitoring
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    volumes:
+      - prometheus.data:/etc/prometheus
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/etc/prometheus'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    expose:
+      - 9090
+    ports:
+      - '9090:9090'
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:8.0.6
+    restart: unless-stopped
+    volumes:
+      - grafana.data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+    ports:
+      - '3000:3000'
+    networks:
+      - monitoring
+
+networks:
+  monitoring: {}
+
+volumes:
+  application.node_modules:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "${PWD}/storage/application.node_modules"
+
+  promtail.data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "${PWD}/storage/promtail.data"
+
+  prometheus.data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "${PWD}/storage/prometheus.data"
+
+  grafana.data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "${PWD}/storage/grafana.data"
