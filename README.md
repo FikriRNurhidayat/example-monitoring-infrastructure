@@ -34,11 +34,11 @@ Then, it will automatically adds Histogram and endpoints to retrieve that metric
 
 When you're set, go to Grafana, and add Prometheus as data source.
 
-![./screenshots/Prometheus-as-datasource.png]
+![Prometheus as datasource](./screenshots/Prometheus-as-datasource.png)
 
 Then, after that, you can import dashboard, and copy the JSON definition from [here](https://grafana.com/api/dashboards/14565/revisions/1/download).
 
-![./screenshots/Import-Dashboard.png]
+![Import Dashboard](./screenshots/Import-Dashboard.png)
 
 You're done.
 
@@ -46,4 +46,4 @@ You're done.
 
 I use loki for logging. So, set Loki as the datasource, and get done with it.
 
-![./screenshots/Loki-as-datasource.png]
+![Loki as datasource](./screenshots/Loki-as-datasource.png)
