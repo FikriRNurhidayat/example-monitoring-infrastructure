@@ -47,3 +47,9 @@ You're done.
 I use loki for logging. So, set Loki as the datasource, and get done with it.
 
 ![Loki as datasource](./screenshots/Loki-as-datasource.png)
+
+### Tempo
+
+It basicly provides telemetry information from the application.
+
+![Tempo as datasource](./screenshots/Tempo-as-datasource.png)

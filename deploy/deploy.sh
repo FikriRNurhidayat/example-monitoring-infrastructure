@@ -1,14 +1,14 @@
 #!/bin/bash
 
-export COMPOSE_PROJECT_NAME=monitoring
-
 if [ "$1" == "--start" ]; then
     declare -a dirs=(
         "storage"
         "storage/prometheus.data"
         "storage/grafana.data"
         "storage/promtail.data"
+        "storage/tempo.data"
         "storage/application.node_modules"
+        "storage/mongo.db"
     )
 
     for dir in ${dirs[@]}; do

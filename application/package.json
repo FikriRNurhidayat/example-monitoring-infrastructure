@@ -1,0 +1,32 @@
+{
+  "name": "biteship-playground-example-server-node",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "bin/www",
+    "dev": "nodemon bin/www",
+    "lint": "prettier --check --write ."
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.4.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.36.3",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.35.1",
+    "@opentelemetry/sdk-node": "^0.35.1",
+    "bcrypt": "^5.1.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-prometheus-middleware": "^1.2.0",
+    "express-winston": "^4.2.0",
+    "fastest-validator": "^1.16.0",
+    "jsonwebtoken": "^9.0.0",
+    "mongoose": "^6.10.0",
+    "prom-client": "^14.1.1",
+    "winston": "^3.8.2",
+    "winston-loki": "^6.0.6"
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.3",
+    "nodemon": "^2.0.20"
+  }
+}

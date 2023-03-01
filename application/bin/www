@@ -1,0 +1,12 @@
+#!/usr/bin/env node
+
+const app = require("../src/app");
+
+const { PORT = "8000" } = process.env;
+
+app.bootstrap()
+.then(() => {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Listening on http://0.0.0.0:${PORT}`);
+  });
+})

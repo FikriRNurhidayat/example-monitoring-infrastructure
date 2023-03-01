@@ -1,20 +1,51 @@
-version: '3'
+version: '3.9'
 
 services:
   application:
-    image: node:alpine
-    working_dir: /opt/example-application
-    command: sh -c "yarn && yarn start"
+    image: fikrirnurhidayat/node:alpine
+    build:
+      context: .
+    deploy:
+      mode: replicated
+      replicas: 3
+    expose:
+      - "8000"
+    working_dir: /opt/notekeeper
+    command: sh -c "yarn --silent start"
     environment:
-      - LOKI_HOST=http://loki:3100
+      - NODE_ENV=production
       - PORT=8000
-    ports:
-      - "8000:8000"
-    volumes:
-      - ${PWD}/..:/opt/example-application
-      - application.node_modules:/opt/example-application/node_modules
+      - DATABASE_URL=mongodb://mongo:27017/notekeeper
+      - LOKI_HOST=http://loki:3100
+      - TELEMETRY_URL=http://otel-collector:4318/v1/traces
+    depends_on:
+      - mongo
+      - otel-collector
     networks:
       - monitoring
+    volumes:
+      - ${PWD}/../application:/opt/notekeeper
+      - application.node_modules:/opt/notekeeper/node_modules
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - application
+    networks:
+      - monitoring
+    ports:
+      - "8080:8080"
+
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    networks:
+      - monitoring
+    volumes:
+      - mongo.db:/data/db
 
   loki:
     image: grafana/loki:2.7.4
@@ -45,6 +76,8 @@ services:
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
+      - '--web.enable-remote-write-receiver'
+      - '--enable-feature=exemplar-storage'
     expose:
       - 9090
     ports:
@@ -52,8 +85,37 @@ services:
     networks:
       - monitoring
 
+  tempo:
+    image: grafana/tempo:latest
+    command: 
+      - "-config.file=/etc/tempo.yaml"
+    networks:
+      - monitoring
+    volumes:
+      - ./config/tempo.yaml:/etc/tempo.yaml
+      - tempo.data:/tmp/tempo
+    ports:
+      - "14268"  # jaeger ingest
+      - "3200"   # tempo
+      - "4317"  # otlp grpc
+      - "4318"  # otlp http
+      - "9411"   # zipkin
+
+  otel-collector:
+    image: otel/opentelemetry-collector:0.61.0
+    command: [ "--config=/etc/otel-collector.yaml" ]
+    ports:
+      - "4317"
+      - "4318"
+    depends_on:
+      - tempo
+    networks:
+      - monitoring
+    volumes:
+      - ./config/otel-collector.yaml:/etc/otel-collector.yaml
+
   grafana:
-    image: grafana/grafana:8.0.6
+    image: grafana/grafana:9.3.2
     restart: unless-stopped
     volumes:
       - grafana.data:/var/lib/grafana
@@ -61,6 +123,7 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
     depends_on:
       - prometheus
     ports:
@@ -99,3 +162,17 @@ volumes:
       type: none
       o: bind
       device: "${PWD}/storage/grafana.data"
+
+  tempo.data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "${PWD}/storage/tempo.data"
+
+  mongo.db:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "${PWD}/storage/mongo.db"
